@@ -1,0 +1,187 @@
+{
+  "GET /api/v1/market/overview": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": {
+      "totalMarketCapUsd": 2648291034020.0,
+      "totalVolume24hUsd": 88421094320.0,
+      "marketCapChange24hPercentage": 2.15,
+      "btcDominancePercentage": 56.4,
+      "ethDominancePercentage": 15.2,
+      "activeCryptocurrencies": 14982,
+      "ongoingIcos": 42,
+      "marketsCount": 1120,
+      "updatedAt": "2024-11-22T12:00:00Z"
+    }
+  },
+  "GET /api/v1/coins?page=1&perPage=20&sortBy=market_cap&order=desc": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": [
+      {
+        "id": "bitcoin",
+        "symbol": "BTC",
+        "name": "Bitcoin",
+        "image": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+        "currentPrice": 68420.50,
+        "marketCap": 1348000000000.0,
+        "marketCapRank": 1,
+        "totalVolume": 38500000000.0,
+        "high24h": 69200.0,
+        "low24h": 67100.0,
+        "priceChange24h": 1320.50,
+        "priceChangePercentage24h": 2.45,
+        "sparklineIn7d": [66800.0, 67200.0, 67900.0, 68420.50],
+        "lastUpdated": "2024-11-22T12:00:00Z"
+      },
+      {
+        "id": "ethereum",
+        "symbol": "ETH",
+        "name": "Ethereum",
+        "image": "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
+        "currentPrice": 3560.80,
+        "marketCap": 428000000000.0,
+        "marketCapRank": 2,
+        "totalVolume": 21400000000.0,
+        "high24h": 3620.0,
+        "low24h": 3480.0,
+        "priceChange24h": -42.20,
+        "priceChangePercentage24h": -1.18,
+        "sparklineIn7d": [3610.0, 3580.0, 3540.0, 3560.80],
+        "lastUpdated": "2024-11-22T12:00:00Z"
+      }
+    ]
+  },
+  "GET /api/v1/coins/bitcoin": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": {
+      "id": "bitcoin",
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "image": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+      "description": "Bitcoin is the first decentralized digital currency...",
+      "currentPrice": 68420.50,
+      "marketCap": 1348000000000.0,
+      "marketCapRank": 1,
+      "fullyDilutedValuation": 1420000000000.0,
+      "totalVolume": 38500000000.0,
+      "high24h": 69200.0,
+      "low24h": 67100.0,
+      "priceChange24h": 1320.50,
+      "priceChangePercentage24h": 2.45,
+      "priceChangePercentage7d": 5.12,
+      "priceChangePercentage30d": 12.80,
+      "circulatingSupply": 19700000.0,
+      "totalSupply": 19700000.0,
+      "maxSupply": 21000000.0,
+      "ath": 73750.07,
+      "athChangePercentage": -7.2,
+      "athDate": "2024-03-14T07:10:00Z",
+      "atl": 67.81,
+      "atlChangePercentage": 100800.0,
+      "atlDate": "2013-07-06T00:00:00Z",
+      "homepage": "https://bitcoin.org",
+      "blockchainSite": "https://mempool.space",
+      "genesisDate": "2009-01-03",
+      "sentimentVotesUpPercentage": 88.5,
+      "sentimentVotesDownPercentage": 11.5
+    }
+  },
+  "GET /api/v1/coins/bitcoin/chart?range=7d": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": {
+      "coinId": "bitcoin",
+      "range": "7d",
+      "minPrice": 66400.0,
+      "maxPrice": 69100.0,
+      "changePercentage": 3.04,
+      "points": [
+        { "timestamp": 1731673200000, "price": 66400.0 },
+        { "timestamp": 1731759600000, "price": 67120.0 },
+        { "timestamp": 1731846000000, "price": 67890.0 },
+        { "timestamp": 1732278000000, "price": 68420.50 }
+      ]
+    }
+  },
+  "GET /api/v1/coins/trending": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": [
+      {
+        "id": "solana",
+        "symbol": "SOL",
+        "name": "Solana",
+        "image": "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+        "currentPrice": 182.40,
+        "priceChangePercentage24h": 5.74,
+        "marketCapRank": 3
+      }
+    ]
+  },
+  "GET /api/v1/watchlist?userId=default_user": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": [
+      {
+        "id": 1,
+        "userId": "default_user",
+        "coinId": "bitcoin",
+        "coinSymbol": "BTC",
+        "coinName": "Bitcoin",
+        "coinImage": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
+        "currentPrice": 68420.50,
+        "priceChangePercentage24h": 2.45,
+        "marketCap": 1348000000000.0,
+        "marketCapRank": 1,
+        "addedAt": "2024-11-22T10:00:00Z"
+      }
+    ]
+  },
+  "POST /api/v1/watchlist/solana?userId=default_user": {
+    "success": true,
+    "message": "Coin added to watchlist",
+    "timestamp": 1732278000000,
+    "data": {
+      "id": 2,
+      "userId": "default_user",
+      "coinId": "solana",
+      "coinSymbol": "SOL",
+      "coinName": "Solana",
+      "coinImage": "https://assets.coingecko.com/coins/images/4128/large/solana.png",
+      "currentPrice": 182.40,
+      "priceChangePercentage24h": 5.74,
+      "marketCap": 85400000000.0,
+      "marketCapRank": 3,
+      "addedAt": "2024-11-22T12:00:00Z"
+    }
+  },
+  "DELETE /api/v1/watchlist/solana?userId=default_user": {
+    "success": true,
+    "message": "Coin removed from watchlist",
+    "timestamp": 1732278000000,
+    "data": null
+  },
+  "GET /api/v1/search?query=bitcoin": {
+    "success": true,
+    "message": "Success",
+    "timestamp": 1732278000000,
+    "data": [
+      {
+        "id": "bitcoin",
+        "name": "Bitcoin",
+        "symbol": "BTC",
+        "marketCapRank": 1,
+        "thumb": "https://assets.coingecko.com/coins/images/1/thumb/bitcoin.png",
+        "large": "https://assets.coingecko.com/coins/images/1/large/bitcoin.png"
+      }
+    ]
+  }
+}

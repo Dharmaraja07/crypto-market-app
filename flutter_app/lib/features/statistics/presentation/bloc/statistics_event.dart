@@ -1,0 +1,17 @@
+import 'package:equatable/equatable.dart';
+
+abstract class StatisticsEvent extends Equatable {
+  const StatisticsEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class FetchStatistics extends StatisticsEvent {
+  final bool isRefresh;
+
+  const FetchStatistics({this.isRefresh = false});
+
+  @override
+  List<Object?> get props => [isRefresh];
+}

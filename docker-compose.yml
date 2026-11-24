@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crypto_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: crypto_market_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./spring_boot_backend/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d crypto_market_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./spring_boot_backend
+      dockerfile: Dockerfile
+    container_name: crypto_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: crypto_market_db
+      DB_USER: postgres
+      DB_PASSWORD: postgrespassword
+      COINGECKO_BASE_URL: https://api.coingecko.com/api/v3
+      COINGECKO_API_KEY: ""
+
+volumes:
+  postgres_data:
