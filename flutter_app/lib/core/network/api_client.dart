@@ -12,7 +12,12 @@ class ApiClient {
   }
 
   void _init() {
-    final customUrl = prefs?.getString('custom_backend_url');
+    String? customUrl = prefs?.getString('custom_backend_url');
+    // If an old local testing URL was saved, clear it to use the new live Render cloud URL
+    if (customUrl != null && (customUrl.contains('localhost') || customUrl.contains('10.80.130') || customUrl.contains('10.0.2.2') || customUrl.contains('10.253.160'))) {
+      prefs?.remove('custom_backend_url');
+      customUrl = null;
+    }
     final baseUrl = customUrl != null && customUrl.isNotEmpty
         ? customUrl
         : ApiConstants.defaultBaseUrl;

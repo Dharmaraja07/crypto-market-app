@@ -2,12 +2,12 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 class ApiConstants {
-  // Default development endpoints
+  // Production Render cloud endpoint
+  static const String liveCloudUrl = 'https://crypto-market-app-2gge.onrender.com/api/v1';
+
+  // Default endpoints
   static String get defaultBaseUrl {
-    if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
+    return liveCloudUrl;
   }
 
   // Endpoints

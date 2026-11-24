@@ -133,6 +133,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   runSpacing: 8,
                   children: [
                     ActionChip(
+                      avatar: const Icon(Icons.cloud_done_rounded, size: 16, color: AppColors.gain),
+                      label: const Text('Render Cloud (Live)'),
+                      tooltip: 'Production Render Cloud API',
+                      onPressed: () => _applyUrl(ApiConstants.liveCloudUrl),
+                      backgroundColor: AppColors.surface,
+                      labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.gain),
+                    ),
+                    ActionChip(
                       label: const Text('USB (localhost:8080)'),
                       tooltip: 'Requires adb reverse tcp:8080 tcp:8080',
                       onPressed: () => _applyUrl('http://localhost:8080/api/v1'),
