@@ -12,11 +12,7 @@ class ApiClient {
   }
 
   void _init() {
-    String? customUrl = prefs?.getString('custom_backend_url');
-    if (customUrl != null && customUrl.contains('10.0.2.2')) {
-      prefs?.remove('custom_backend_url');
-      customUrl = null;
-    }
+    final customUrl = prefs?.getString('custom_backend_url');
     final baseUrl = customUrl != null && customUrl.isNotEmpty
         ? customUrl
         : ApiConstants.defaultBaseUrl;

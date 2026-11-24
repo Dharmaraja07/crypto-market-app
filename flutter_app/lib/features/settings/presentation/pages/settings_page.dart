@@ -140,9 +140,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       labelStyle: const TextStyle(fontSize: 11, color: AppColors.primary),
                     ),
                     ActionChip(
-                      label: const Text('Wi-Fi (10.253.160.151)'),
+                      label: const Text('Wi-Fi (10.80.130.211)'),
                       tooltip: 'Computer Local Wi-Fi IP',
-                      onPressed: () => _applyUrl('http://10.253.160.151:8080/api/v1'),
+                      onPressed: () => _applyUrl('http://10.80.130.211:8080/api/v1'),
                       backgroundColor: AppColors.surface,
                       labelStyle: const TextStyle(fontSize: 11, color: AppColors.textPrimary),
                     ),

@@ -4,6 +4,9 @@ import 'package:flutter/foundation.dart';
 class ApiConstants {
   // Default development endpoints
   static String get defaultBaseUrl {
+    if (!kIsWeb && Platform.isAndroid) {
+      return 'http://10.0.2.2:8080/api/v1';
+    }
     return 'http://localhost:8080/api/v1';
   }
 
