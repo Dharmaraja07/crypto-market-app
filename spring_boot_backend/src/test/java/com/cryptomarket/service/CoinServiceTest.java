@@ -31,7 +31,10 @@ class CoinServiceTest {
     }
 
     @Test
-    void getCoins_SortsByPrice() {
+    void getCoins_DelegatesPaginationToUpstream() {
+        // Sorting is now delegated to CoinGecko — the service returns whatever order
+        // the upstream (or mock) returns for a given page. We verify that the correct
+        // page and perPage are forwarded, and results are returned as-is (no re-sorting).
         CoinSummaryDto c1 = new CoinSummaryDto();
         c1.setId("btc");
         c1.setName("Bitcoin");
@@ -44,14 +47,30 @@ class CoinServiceTest {
         c2.setMarketCapRank(2);
         c2.setCurrentPrice(3000.0);
 
-        List<CoinSummaryDto> list = new ArrayList<>(List.of(c2, c1));
-        when(client.fetchCoins(anyInt(), anyInt(), anyString(), anyString())).thenReturn(list);
+        // Mock returns coins in the order CoinGecko would (market_cap_desc = btc first)
+        List<CoinSummaryDto> upstreamOrder = new ArrayList<>(List.of(c1, c2));
+        when(client.fetchCoins(eq(1), eq(10), anyString(), anyString())).thenReturn(upstreamOrder);
 
-        List<CoinSummaryDto> result = coinService.getCoins(1, 10, "price", "desc", null);
+        List<CoinSummaryDto> result = coinService.getCoins(1, 10, "market_cap", "desc", null);
 
         assertEquals(2, result.size());
-        assertEquals("btc", result.get(0).getId());
+        assertEquals("btc", result.get(0).getId());   // upstream order preserved
         assertEquals("eth", result.get(1).getId());
+    }
+
+    @Test
+    void getCoins_Page2_ReturnsCorrectPage() {
+        // Verify that page 2 is passed correctly to the upstream client (not faked)
+        CoinSummaryDto c1 = new CoinSummaryDto();
+        c1.setId("bnb");
+        c1.setName("BNB");
+
+        when(client.fetchCoins(eq(2), eq(5), anyString(), anyString())).thenReturn(List.of(c1));
+
+        List<CoinSummaryDto> result = coinService.getCoins(2, 5, "market_cap", "desc", null);
+
+        assertEquals(1, result.size());
+        assertEquals("bnb", result.get(0).getId());
     }
 
     @Test
