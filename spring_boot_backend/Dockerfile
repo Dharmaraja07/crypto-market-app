@@ -2,23 +2,23 @@
 FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
-# Cache dependencies
+# Copy pom.xml and source code
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source code and build production jar
 COPY src ./src
+
+# Package production jar (skip unit tests for faster cloud build)
 RUN mvn clean package -DskipTests
 
 # --- Runtime Stage ---
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-# Run as non-root user for enhanced container security
+# Non-root user for container security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-COPY --from=build /app/target/crypto-market-backend-1.0.0.jar app.jar
+# Copy jar regardless of exact version number
+COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
