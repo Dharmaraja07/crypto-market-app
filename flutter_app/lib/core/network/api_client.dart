@@ -24,8 +24,8 @@ class ApiClient {
 
     dio.options = BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 12),
-      receiveTimeout: const Duration(seconds: 12),
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -40,7 +40,37 @@ class ApiClient {
         onResponse: (response, handler) {
           return handler.next(response);
         },
-        onError: (DioException error, handler) {
+        onError: (DioException error, handler) async {
+          // Automatic retry logic for timeouts and transient connection errors (e.g., Render free tier cold-start)
+          final isTimeout = error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.receiveTimeout ||
+              error.type == DioExceptionType.sendTimeout ||
+              error.type == DioExceptionType.connectionError;
+
+          final isTransientServerStatus = error.response != null &&
+              (error.response!.statusCode == 502 ||
+               error.response!.statusCode == 503 ||
+               error.response!.statusCode == 504 ||
+               error.response!.statusCode == 408);
+
+          final requestOptions = error.requestOptions;
+          final retryCount = (requestOptions.extra['retry_count'] as int?) ?? 0;
+          const maxRetries = 2;
+
+          if ((isTimeout || isTransientServerStatus) && retryCount < maxRetries) {
+            requestOptions.extra['retry_count'] = retryCount + 1;
+            // Short backoff delay before retrying while the container finishes booting up
+            await Future.delayed(Duration(seconds: 2 * (retryCount + 1)));
+            try {
+              final response = await dio.fetch(requestOptions);
+              return handler.resolve(response);
+            } catch (e) {
+              if (e is DioException) {
+                return handler.next(e);
+              }
+            }
+          }
+
           return handler.next(error);
         },
       ),
@@ -135,17 +165,19 @@ class ApiClient {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return ServerException('Connection timed out. Please check your backend connection.', 408);
+        return const ServerException('Server response timed out. The cloud server may be waking up from sleep. Please try again.', 408);
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
         final data = error.response?.data;
         String message = 'Server error ($statusCode)';
         if (data is Map && data.containsKey('message')) {
           message = data['message'].toString();
+        } else if (statusCode == 502 || statusCode == 503 || statusCode == 504) {
+          message = 'Cloud server is starting up or temporarily unavailable ($statusCode). Please try again in a moment.';
         }
         return ServerException(message, statusCode);
       case DioExceptionType.connectionError:
-        return const ServerException('Cannot connect to backend server. Ensure backend is running.', 503);
+        return const ServerException('Cannot connect to backend server. The cloud service may be waking up, please try again.', 503);
       default:
         return ServerException(error.message ?? 'Unknown network error occurred');
     }

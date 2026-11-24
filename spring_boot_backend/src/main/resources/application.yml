@@ -5,6 +5,8 @@ server:
 spring:
   application:
     name: crypto-market-backend
+  main:
+    lazy-initialization: true
   profiles:
     active: dev
   datasource:
