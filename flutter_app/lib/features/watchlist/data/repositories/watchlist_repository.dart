@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:crypto_market_app/core/constants/api_constants.dart';
 import 'package:crypto_market_app/core/network/api_client.dart';
 import '../datasources/watchlist_local_data_source.dart';
@@ -7,11 +8,19 @@ import 'package:crypto_market_app/features/coins/data/models/coin_summary_model.
 class WatchlistRepository {
   final ApiClient apiClient;
   final WatchlistLocalDataSource localDataSource;
+  final StreamController<List<WatchlistItemModel>> _watchlistController =
+      StreamController<List<WatchlistItemModel>>.broadcast();
+
+  Stream<List<WatchlistItemModel>> get watchlistStream => _watchlistController.stream;
 
   WatchlistRepository({
     required this.apiClient,
     required this.localDataSource,
   });
+
+  void dispose() {
+    _watchlistController.close();
+  }
 
   Future<List<WatchlistItemModel>> getWatchlist({String userId = 'default_user'}) async {
     try {
@@ -25,12 +34,15 @@ class WatchlistRepository {
             .map((e) => WatchlistItemModel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
         await localDataSource.cacheWatchlist(items);
+        _watchlistController.add(items);
         return items;
       }
     } catch (_) {
       // Fallback to local cache if network/backend fails
     }
-    return localDataSource.getCachedWatchlist();
+    final cached = await localDataSource.getCachedWatchlist();
+    _watchlistController.add(cached);
+    return cached;
   }
 
   Future<WatchlistItemModel> addToWatchlist({
@@ -51,17 +63,23 @@ class WatchlistRepository {
       addedAt: DateTime.now().toIso8601String(),
     );
 
-    // Save locally first
+    // Save locally first and notify stream immediately
     await localDataSource.addToCache(localItem);
+    final currentList = await localDataSource.getCachedWatchlist();
+    _watchlistController.add(currentList);
 
-    // Sync with backend
+    // Sync with backend asynchronously
     try {
       final data = await apiClient.post(
         ApiConstants.watchlistAdd(coinId),
         queryParameters: {'userId': userId},
       );
       if (data != null && data is Map<String, dynamic>) {
-        return WatchlistItemModel.fromJson(data);
+        final serverItem = WatchlistItemModel.fromJson(data);
+        await localDataSource.addToCache(serverItem);
+        final updatedList = await localDataSource.getCachedWatchlist();
+        _watchlistController.add(updatedList);
+        return serverItem;
       }
     } catch (_) {}
 
@@ -72,7 +90,11 @@ class WatchlistRepository {
     required String coinId,
     String userId = 'default_user',
   }) async {
+    // Remove locally and notify stream immediately
     await localDataSource.removeFromCache(coinId);
+    final currentList = await localDataSource.getCachedWatchlist();
+    _watchlistController.add(currentList);
+
     try {
       await apiClient.delete(
         ApiConstants.watchlistRemove(coinId),

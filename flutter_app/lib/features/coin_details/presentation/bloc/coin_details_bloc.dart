@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:crypto_market_app/features/coins/data/repositories/coin_repository.dart';
 import 'package:crypto_market_app/features/watchlist/data/repositories/watchlist_repository.dart';
+import 'package:crypto_market_app/features/watchlist/data/models/watchlist_item_model.dart';
 import 'package:crypto_market_app/features/coins/data/models/coin_summary_model.dart';
 import 'coin_details_event.dart';
 import 'coin_details_state.dart';
@@ -8,6 +10,7 @@ import 'coin_details_state.dart';
 class CoinDetailsBloc extends Bloc<CoinDetailsEvent, CoinDetailsState> {
   final CoinRepository coinRepository;
   final WatchlistRepository watchlistRepository;
+  StreamSubscription<List<WatchlistItemModel>>? _watchlistSubscription;
 
   CoinDetailsBloc({
     required this.coinRepository,
@@ -15,6 +18,30 @@ class CoinDetailsBloc extends Bloc<CoinDetailsEvent, CoinDetailsState> {
   }) : super(CoinDetailsInitial()) {
     on<FetchCoinDetail>(_onFetchCoinDetail);
     on<ToggleWatchlistStatus>(_onToggleWatchlist);
+    on<WatchlistStatusSync>(_onWatchlistStatusSync);
+
+    _watchlistSubscription = watchlistRepository.watchlistStream.listen((items) {
+      add(WatchlistStatusSync(items));
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _watchlistSubscription?.cancel();
+    return super.close();
+  }
+
+  void _onWatchlistStatusSync(
+    WatchlistStatusSync event,
+    Emitter<CoinDetailsState> emit,
+  ) {
+    final current = state;
+    if (current is CoinDetailsLoaded) {
+      final isInWatchlist = event.items.any((item) => item.coinId == current.coin.id);
+      if (current.isInWatchlist != isInWatchlist) {
+        emit(current.copyWith(isInWatchlist: isInWatchlist));
+      }
+    }
   }
 
   Future<void> _onFetchCoinDetail(

@@ -25,6 +25,11 @@ import 'package:crypto_market_app/features/watchlist/presentation/bloc/watchlist
 import 'package:crypto_market_app/features/watchlist/presentation/bloc/watchlist_event.dart';
 import 'package:crypto_market_app/features/watchlist/presentation/bloc/watchlist_state.dart';
 
+import 'package:crypto_market_app/features/coin_details/data/models/coin_detail_model.dart';
+import 'package:crypto_market_app/features/coin_details/presentation/bloc/coin_details_bloc.dart';
+import 'package:crypto_market_app/features/coin_details/presentation/bloc/coin_details_event.dart';
+import 'package:crypto_market_app/features/coin_details/presentation/bloc/coin_details_state.dart';
+
 class MockMarketRepository extends Mock implements MarketRepository {}
 class MockCoinRepository extends Mock implements CoinRepository {}
 class MockWatchlistRepository extends Mock implements WatchlistRepository {}
@@ -33,12 +38,6 @@ void main() {
   late MockMarketRepository mockMarketRepo;
   late MockCoinRepository mockCoinRepo;
   late MockWatchlistRepository mockWatchlistRepo;
-
-  setUp(() {
-    mockMarketRepo = MockMarketRepository();
-    mockCoinRepo = MockCoinRepository();
-    mockWatchlistRepo = MockWatchlistRepository();
-  });
 
   const testOverview = MarketOverviewModel(
     totalMarketCapUsd: 2500000000000.0,
@@ -60,6 +59,17 @@ void main() {
     priceChangePercentage24h: 2.5,
     marketCapRank: 1,
   );
+
+  setUpAll(() {
+    registerFallbackValue(testCoin);
+  });
+
+  setUp(() {
+    mockMarketRepo = MockMarketRepository();
+    mockCoinRepo = MockCoinRepository();
+    mockWatchlistRepo = MockWatchlistRepository();
+    when(() => mockWatchlistRepo.watchlistStream).thenAnswer((_) => const Stream.empty());
+  });
 
   group('MarketBloc Tests', () {
     blocTest<MarketBloc, MarketState>(
@@ -159,6 +169,103 @@ void main() {
       expect: () => [
         isA<WatchlistLoading>(),
         isA<WatchlistEmpty>(),
+      ],
+    );
+
+    blocTest<WatchlistBloc, WatchlistState>(
+      'immediately emits WatchlistEmpty optimistically when RemoveCoinFromWatchlist is called',
+      build: () {
+        when(() => mockWatchlistRepo.removeFromWatchlist(coinId: any(named: 'coinId')))
+            .thenAnswer((_) async {});
+        return WatchlistBloc(repository: mockWatchlistRepo);
+      },
+      seed: () => const WatchlistLoaded([testWatchlistItem]),
+      act: (bloc) => bloc.add(const RemoveCoinFromWatchlist('bitcoin')),
+      expect: () => [
+        isA<WatchlistEmpty>(),
+      ],
+    );
+
+    blocTest<WatchlistBloc, WatchlistState>(
+      'immediately emits WatchlistLoaded optimistically when AddCoinToWatchlist is called',
+      build: () {
+        when(() => mockWatchlistRepo.addToWatchlist(
+          coinId: any(named: 'coinId'),
+          coin: any(named: 'coin'),
+        )).thenAnswer((_) async => testWatchlistItem);
+        return WatchlistBloc(repository: mockWatchlistRepo);
+      },
+      act: (bloc) => bloc.add(const AddCoinToWatchlist(testCoin)),
+      expect: () => [
+        isA<WatchlistLoaded>().having((s) => s.items.first.coinId, 'coinId', 'bitcoin'),
+      ],
+    );
+  });
+
+  group('CoinDetailsBloc Tests', () {
+    const testDetail = CoinDetailModel(
+      id: 'bitcoin',
+      symbol: 'BTC',
+      name: 'Bitcoin',
+      currentPrice: 65000.0,
+      priceChangePercentage24h: 2.5,
+      marketCapRank: 1,
+    );
+
+    blocTest<CoinDetailsBloc, CoinDetailsState>(
+      'emits [CoinDetailsLoading, CoinDetailsLoaded] when FetchCoinDetail succeeds',
+      build: () {
+        when(() => mockCoinRepo.getCoinDetail('bitcoin')).thenAnswer((_) async => testDetail);
+        when(() => mockWatchlistRepo.isInWatchlist('bitcoin')).thenAnswer((_) async => true);
+        return CoinDetailsBloc(
+          coinRepository: mockCoinRepo,
+          watchlistRepository: mockWatchlistRepo,
+        );
+      },
+      act: (bloc) => bloc.add(const FetchCoinDetail('bitcoin')),
+      expect: () => [
+        isA<CoinDetailsLoading>(),
+        isA<CoinDetailsLoaded>().having((s) => s.isInWatchlist, 'isInWatchlist', true),
+      ],
+    );
+
+    blocTest<CoinDetailsBloc, CoinDetailsState>(
+      'toggles isInWatchlist immediately when ToggleWatchlistStatus is called',
+      build: () {
+        when(() => mockWatchlistRepo.removeFromWatchlist(coinId: 'bitcoin')).thenAnswer((_) async {});
+        return CoinDetailsBloc(
+          coinRepository: mockCoinRepo,
+          watchlistRepository: mockWatchlistRepo,
+        );
+      },
+      seed: () => const CoinDetailsLoaded(coin: testDetail, isInWatchlist: true),
+      act: (bloc) => bloc.add(const ToggleWatchlistStatus(testDetail)),
+      expect: () => [
+        isA<CoinDetailsLoaded>().having((s) => s.isInWatchlist, 'isInWatchlist', false),
+      ],
+    );
+
+    blocTest<CoinDetailsBloc, CoinDetailsState>(
+      'syncs isInWatchlist when WatchlistStatusSync is received',
+      build: () {
+        return CoinDetailsBloc(
+          coinRepository: mockCoinRepo,
+          watchlistRepository: mockWatchlistRepo,
+        );
+      },
+      seed: () => const CoinDetailsLoaded(coin: testDetail, isInWatchlist: false),
+      act: (bloc) => bloc.add(const WatchlistStatusSync([
+        WatchlistItemModel(
+          userId: 'default_user',
+          coinId: 'bitcoin',
+          coinSymbol: 'BTC',
+          coinName: 'Bitcoin',
+          currentPrice: 65000.0,
+          priceChangePercentage24h: 2.5,
+        ),
+      ])),
+      expect: () => [
+        isA<CoinDetailsLoaded>().having((s) => s.isInWatchlist, 'isInWatchlist', true),
       ],
     );
   });

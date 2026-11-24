@@ -84,9 +84,15 @@ class _WatchlistPageState extends State<WatchlistPage> {
                   final item = state.items[index];
                   return WatchlistCoinItem(
                     item: item,
-                    onTap: () => context.push('/coin/${item.coinId}'),
+                    onTap: () async {
+                      await context.push('/coin/${item.coinId}');
+                      if (context.mounted) {
+                        context.read<WatchlistBloc>().add(const FetchWatchlist(isRefresh: true));
+                      }
+                    },
                     onRemove: () {
                       context.read<WatchlistBloc>().add(RemoveCoinFromWatchlist(item.coinId));
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('${item.coinName} removed from Watchlist'),

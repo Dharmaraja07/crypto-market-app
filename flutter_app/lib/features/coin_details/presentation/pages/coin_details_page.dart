@@ -61,11 +61,13 @@ class _CoinDetailsPageState extends State<CoinDetailsPage> {
                   ),
                   tooltip: state.isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist',
                   onPressed: () {
+                    final wasInWatchlist = state.isInWatchlist;
                     context.read<CoinDetailsBloc>().add(ToggleWatchlistStatus(state.coin));
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          state.isInWatchlist
+                          wasInWatchlist
                               ? '${state.coin.name} removed from Watchlist'
                               : '${state.coin.name} added to Watchlist',
                         ),
