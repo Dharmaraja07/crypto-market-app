@@ -23,6 +23,6 @@ COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 
 # Fast startup & memory tuning for 512MB RAM free-tier cloud containers (Render / Koyeb)
-ENV JAVA_OPTS="-XX:+TieredStopAtLevel=1 -XX:+UseSerialGC -Xss512k -XX:MaxRAMPercentage=75.0"
+ENV JAVA_OPTS="-XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xss512k -XX:MaxRAMPercentage=75.0"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
