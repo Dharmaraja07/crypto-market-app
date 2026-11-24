@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:crypto_market_app/core/constants/app_colors.dart';
+import 'package:crypto_market_app/features/watchlist/presentation/bloc/watchlist_bloc.dart';
+import 'package:crypto_market_app/features/watchlist/presentation/bloc/watchlist_event.dart';
 
 class MainNavigationShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -27,6 +30,9 @@ class MainNavigationShell extends StatelessWidget {
               index,
               initialLocation: index == navigationShell.currentIndex,
             );
+            if (index == 2) {
+              context.read<WatchlistBloc>().add(const FetchWatchlist(isRefresh: true));
+            }
           },
           items: const [
             BottomNavigationBarItem(

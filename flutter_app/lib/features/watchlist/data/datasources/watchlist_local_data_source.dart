@@ -24,10 +24,9 @@ class WatchlistLocalDataSource {
 
   Future<void> addToCache(WatchlistItemModel item) async {
     final current = await getCachedWatchlist();
-    if (!current.any((e) => e.coinId == item.coinId)) {
-      current.insert(0, item);
-      await cacheWatchlist(current);
-    }
+    current.removeWhere((e) => e.coinId == item.coinId);
+    current.insert(0, item);
+    await cacheWatchlist(current);
   }
 
   Future<void> removeFromCache(String coinId) async {
