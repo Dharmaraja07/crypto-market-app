@@ -171,6 +171,7 @@ class _HomeMarketPageState extends State<HomeMarketPage> {
                         final coin = coins[index];
                         return CoinListItem(
                           coin: coin,
+                          index: index + 1,
                           onTap: () => context.push('/coin/${coin.id}'),
                         );
                       },

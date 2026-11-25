@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/network/api_client.dart';
@@ -19,6 +21,11 @@ import 'features/watchlist/presentation/bloc/watchlist_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Prevent google_fonts from attempting network requests at startup;
+  // all Inter font files are bundled locally in assets/google_fonts/
+  GoogleFonts.config.allowRuntimeFetching = false;
+
   final prefs = await SharedPreferences.getInstance();
 
   final apiClient = ApiClient(prefs: prefs);
@@ -41,7 +48,7 @@ void main() async {
   );
 }
 
-class CryptoMarketApp extends StatelessWidget {
+class CryptoMarketApp extends StatefulWidget {
   final ApiClient apiClient;
   final MarketRepository marketRepository;
   final CoinRepository coinRepository;
@@ -56,47 +63,58 @@ class CryptoMarketApp extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final router = AppRouter.createRouter(apiClient);
+  State<CryptoMarketApp> createState() => _CryptoMarketAppState();
+}
 
+class _CryptoMarketAppState extends State<CryptoMarketApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = AppRouter.createRouter(widget.apiClient);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider.value(value: marketRepository),
-        RepositoryProvider.value(value: coinRepository),
-        RepositoryProvider.value(value: watchlistRepository),
+        RepositoryProvider.value(value: widget.marketRepository),
+        RepositoryProvider.value(value: widget.coinRepository),
+        RepositoryProvider.value(value: widget.watchlistRepository),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => MarketBloc(repository: marketRepository),
+            create: (context) => MarketBloc(repository: widget.marketRepository),
           ),
           BlocProvider(
-            create: (context) => CoinsBloc(repository: coinRepository),
+            create: (context) => CoinsBloc(repository: widget.coinRepository),
           ),
           BlocProvider(
             create: (context) => CoinDetailsBloc(
-              coinRepository: coinRepository,
-              watchlistRepository: watchlistRepository,
+              coinRepository: widget.coinRepository,
+              watchlistRepository: widget.watchlistRepository,
             ),
           ),
           BlocProvider(
-            create: (context) => ChartBloc(repository: coinRepository),
+            create: (context) => ChartBloc(repository: widget.coinRepository),
           ),
           BlocProvider(
-            create: (context) => WatchlistBloc(repository: watchlistRepository),
+            create: (context) => WatchlistBloc(repository: widget.watchlistRepository),
           ),
           BlocProvider(
-            create: (context) => StatisticsBloc(repository: marketRepository),
+            create: (context) => StatisticsBloc(repository: widget.marketRepository),
           ),
           BlocProvider(
-            create: (context) => SearchBloc(repository: coinRepository),
+            create: (context) => SearchBloc(repository: widget.coinRepository),
           ),
         ],
         child: MaterialApp.router(
           title: 'Crypto Market Research',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.darkTheme,
-          routerConfig: router,
+          routerConfig: _router,
         ),
       ),
     );

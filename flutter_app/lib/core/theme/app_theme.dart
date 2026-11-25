@@ -3,12 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
 
 class AppTheme {
-  static ThemeData get darkTheme {
-    final textTheme = GoogleFonts.interTextTheme(ThemeData.dark().textTheme);
+  // Pre-cached ThemeData to eliminate main-thread recreation jank on every build
+  static final ThemeData darkTheme = _buildDarkTheme();
+
+  static ThemeData _buildDarkTheme() {
+    final baseDarkTheme = ThemeData.dark();
+    final textTheme = GoogleFonts.interTextTheme(baseDarkTheme.textTheme);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      fontFamily: 'Inter',
+      fontFamilyFallback: const ['Inter', 'Roboto', 'sans-serif'],
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.dark(
