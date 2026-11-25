@@ -184,6 +184,7 @@ class _CoinsListPageState extends State<CoinsListPage> {
                         final coin = state.coins[index];
                         return CoinListItem(
                           coin: coin,
+                          index: index + 1,
                           onTap: () => context.push('/coin/${coin.id}'),
                         );
                       },

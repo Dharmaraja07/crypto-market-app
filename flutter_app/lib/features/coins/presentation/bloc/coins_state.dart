@@ -1,6 +1,9 @@
 import 'package:equatable/equatable.dart';
 import '../../data/models/coin_summary_model.dart';
 
+// Sentinel used to distinguish "not provided" from explicit null in copyWith
+const Object _sentinel = Object();
+
 abstract class CoinsState extends Equatable {
   const CoinsState();
 
@@ -38,7 +41,7 @@ class CoinsLoaded extends CoinsState {
     bool? isFetchingMore,
     String? sortBy,
     String? order,
-    String? searchQuery,
+    Object? searchQuery = _sentinel,
   }) {
     return CoinsLoaded(
       coins: coins ?? this.coins,
@@ -47,7 +50,7 @@ class CoinsLoaded extends CoinsState {
       isFetchingMore: isFetchingMore ?? this.isFetchingMore,
       sortBy: sortBy ?? this.sortBy,
       order: order ?? this.order,
-      searchQuery: searchQuery ?? this.searchQuery,
+      searchQuery: searchQuery == _sentinel ? this.searchQuery : searchQuery as String?,
     );
   }
 

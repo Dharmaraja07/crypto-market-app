@@ -8,11 +8,13 @@ import '../../data/models/coin_summary_model.dart';
 class CoinListItem extends StatelessWidget {
   final CoinSummaryModel coin;
   final VoidCallback onTap;
+  final int? index;
 
   const CoinListItem({
     super.key,
     required this.coin,
     required this.onTap,
+    this.index,
   });
 
   @override
@@ -30,11 +32,14 @@ class CoinListItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Rank
+            // S.No / Rank
             SizedBox(
-              width: 24,
+              width: 32,
               child: Text(
-                coin.marketCapRank != null ? '${coin.marketCapRank}' : '-',
+                index != null
+                    ? '$index'
+                    : (coin.marketCapRank != null ? '${coin.marketCapRank}' : '-'),
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: AppColors.textMuted,
                   fontSize: 12,
