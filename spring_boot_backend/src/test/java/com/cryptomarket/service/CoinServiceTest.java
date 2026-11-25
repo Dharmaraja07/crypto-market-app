@@ -94,6 +94,52 @@ class CoinServiceTest {
     }
 
     @Test
+    void getCoins_SortsByPrice() {
+        CoinSummaryDto c1 = new CoinSummaryDto();
+        c1.setId("btc");
+        c1.setName("Bitcoin");
+        c1.setCurrentPrice(60000.0);
+
+        CoinSummaryDto c2 = new CoinSummaryDto();
+        c2.setId("eth");
+        c2.setName("Ethereum");
+        c2.setCurrentPrice(3000.0);
+
+        when(client.fetchCoins(anyInt(), anyInt(), anyString(), anyString()))
+                .thenReturn(new ArrayList<>(List.of(c1, c2)));
+
+        List<CoinSummaryDto> resultDesc = coinService.getCoins(1, 10, "price", "desc", null);
+        assertEquals(2, resultDesc.size());
+        assertEquals("btc", resultDesc.get(0).getId()); // $60000 > $3000
+
+        List<CoinSummaryDto> resultAsc = coinService.getCoins(1, 10, "price", "asc", null);
+        assertEquals(2, resultAsc.size());
+        assertEquals("eth", resultAsc.get(0).getId()); // $3000 < $60000
+    }
+
+    @Test
+    void getCoins_SortsByPercentageChange() {
+        CoinSummaryDto c1 = new CoinSummaryDto();
+        c1.setId("btc");
+        c1.setPriceChangePercentage24h(2.5);
+
+        CoinSummaryDto c2 = new CoinSummaryDto();
+        c2.setId("sol");
+        c2.setPriceChangePercentage24h(15.0);
+
+        when(client.fetchCoins(anyInt(), anyInt(), anyString(), anyString()))
+                .thenReturn(new ArrayList<>(List.of(c1, c2)));
+
+        List<CoinSummaryDto> resultDesc = coinService.getCoins(1, 10, "percentage_change", "desc", null);
+        assertEquals(2, resultDesc.size());
+        assertEquals("sol", resultDesc.get(0).getId()); // 15.0% > 2.5%
+
+        List<CoinSummaryDto> resultAsc = coinService.getCoins(1, 10, "percentage_change", "asc", null);
+        assertEquals(2, resultAsc.size());
+        assertEquals("btc", resultAsc.get(0).getId()); // 2.5% < 15.0%
+    }
+
+    @Test
     void getCoinDetail_ReturnsDetail() {
         CoinDetailDto detail = new CoinDetailDto();
         detail.setId("solana");
