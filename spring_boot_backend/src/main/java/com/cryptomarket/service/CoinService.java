@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,25 +26,59 @@ public class CoinService {
     public List<CoinSummaryDto> getCoins(int page, int perPage, String sortBy, String order, String search) {
         log.info("Fetching coins: page={}, perPage={}, sortBy={}, order={}, search={}", page, perPage, sortBy, order, search);
 
-        // --- SEARCH PATH: search is done server-side via CoinGecko search endpoint ---
-        // We fetch a broad set for the filtered case, then paginate in memory.
-        // For non-search, all pagination AND sorting is delegated directly to CoinGecko.
-        if (search != null && !search.trim().isEmpty()) {
-            // Search: fetch top 250 so we can sort + paginate filtered results accurately
-            List<CoinSummaryDto> allCoins = client.fetchCoins(1, 250, "usd", buildCoinGeckoOrder(sortBy, order));
-            String q = search.toLowerCase().trim();
-            List<CoinSummaryDto> filtered = allCoins.stream()
-                    .filter(c -> c.getName().toLowerCase().contains(q) || c.getSymbol().toLowerCase().contains(q))
-                    .collect(Collectors.toList());
+        boolean isSearch = search != null && !search.trim().isEmpty();
+        boolean isPriceOrChangeSort = isPriceOrChangeSort(sortBy);
+
+        // If search filter is active or sorting by price/24h change (which CoinGecko /coins/markets does not support natively)
+        if (isSearch || isPriceOrChangeSort) {
+            List<CoinSummaryDto> allCoins = new ArrayList<>(client.fetchCoins(1, 250, "usd", "market_cap_desc"));
+
+            List<CoinSummaryDto> list = allCoins;
+            if (isSearch) {
+                String q = search.toLowerCase().trim();
+                list = list.stream()
+                        .filter(c -> (c.getName() != null && c.getName().toLowerCase().contains(q)) ||
+                                     (c.getSymbol() != null && c.getSymbol().toLowerCase().contains(q)))
+                        .collect(Collectors.toList());
+            }
+
+            sortCoins(list, sortBy, order);
+
             int start = Math.max(0, (page - 1) * perPage);
-            int end = Math.min(filtered.size(), start + perPage);
-            return start >= filtered.size() ? List.of() : filtered.subList(start, end);
+            int end = Math.min(list.size(), start + perPage);
+            return start >= list.size() ? List.of() : list.subList(start, end);
         }
 
-        // --- DEFAULT PATH: delegate page + perPage + order directly to CoinGecko ---
-        // This gives access to all 10,000+ coins correctly.
+        // --- DEFAULT PATH: delegate page + perPage + order directly to CoinGecko for market_cap / volume ---
         String cgOrder = buildCoinGeckoOrder(sortBy, order);
         return client.fetchCoins(page, perPage, "usd", cgOrder);
+    }
+
+    private boolean isPriceOrChangeSort(String sortBy) {
+        if (sortBy == null) return false;
+        String s = sortBy.toLowerCase();
+        return s.equals("price") || s.equals("percentage_change") || s.equals("price_change_percentage_24h");
+    }
+
+    private void sortCoins(List<CoinSummaryDto> coins, String sortBy, String order) {
+        Comparator<CoinSummaryDto> comparator = switch (sortBy != null ? sortBy.toLowerCase() : "market_cap") {
+            case "price" -> Comparator.comparing(CoinSummaryDto::getCurrentPrice, Comparator.nullsLast(Double::compareTo));
+            case "volume", "total_volume" -> Comparator.comparing(CoinSummaryDto::getTotalVolume, Comparator.nullsLast(Double::compareTo));
+            case "percentage_change", "price_change_percentage_24h" -> Comparator.comparing(CoinSummaryDto::getPriceChangePercentage24h, Comparator.nullsLast(Double::compareTo));
+            default -> Comparator.comparing(CoinSummaryDto::getMarketCapRank, Comparator.nullsLast(Integer::compareTo));
+        };
+
+        boolean isMarketCap = sortBy == null || "market_cap".equalsIgnoreCase(sortBy);
+        boolean wantDesc = order == null || "desc".equalsIgnoreCase(order);
+
+        // market_cap rank is inverse: rank 1 = highest cap, so for "desc" (highest cap first) keep ascending rank order;
+        // for "asc" (lowest cap first) reverse to descending rank order.
+        // For all other fields: "desc" = reverse natural ascending comparator, "asc" = keep it.
+        if (isMarketCap ? !wantDesc : wantDesc) {
+            comparator = comparator.reversed();
+        }
+
+        coins.sort(comparator);
     }
 
     /**
@@ -57,9 +92,6 @@ public class CoinService {
         return switch (sortBy != null ? sortBy.toLowerCase() : "market_cap") {
             case "volume", "total_volume" -> "volume_" + direction;
             case "id"                     -> "id_" + direction;
-            // CoinGecko doesn't support price sort natively — fall back to market_cap
-            case "price", "percentage_change", "price_change_percentage_24h"
-                                          -> "market_cap_" + direction;
             default                       -> "market_cap_" + direction;
         };
     }

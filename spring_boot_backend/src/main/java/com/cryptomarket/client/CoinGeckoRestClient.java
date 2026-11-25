@@ -77,11 +77,27 @@ public class CoinGeckoRestClient {
         } catch (Exception ex) {
             log.warn("CoinGecko /coins/markets failed: {}. Falling back to mock data.", ex.getMessage());
             if (mockFallbackEnabled) {
-                return mockService.getMockCoins(page, perPage, "market_cap", "desc");
+                return getMockFallbackCoins(page, perPage, order);
             }
             throw new RuntimeException("Failed to fetch coins: " + ex.getMessage(), ex);
         }
-        return mockService.getMockCoins(page, perPage, "market_cap", "desc");
+        return getMockFallbackCoins(page, perPage, order);
+    }
+
+    private List<CoinSummaryDto> getMockFallbackCoins(int page, int perPage, String order) {
+        String sortBy = "market_cap";
+        String sortDir = "desc";
+        if (order != null) {
+            if (order.startsWith("volume")) {
+                sortBy = "volume";
+            } else if (order.startsWith("id")) {
+                sortBy = "id";
+            }
+            if (order.endsWith("_asc")) {
+                sortDir = "asc";
+            }
+        }
+        return mockService.getMockCoins(page, perPage, sortBy, sortDir);
     }
 
     public CoinDetailDto fetchCoinDetail(String coinId) {
