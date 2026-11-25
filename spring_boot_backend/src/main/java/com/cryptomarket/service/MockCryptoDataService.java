@@ -269,6 +269,10 @@ public class MockCryptoDataService {
                 .collect(Collectors.toList());
 
         // Sort
+        // For market_cap we sort by marketCapRank (ascending rank = higher market cap).
+        // "desc" means highest market cap first → lowest rank number first → ascending rank order.
+        // "asc"  means lowest  market cap first → highest rank number first → descending rank order.
+        // For all other numeric fields the natural meaning applies: "desc" = reversed (highest value first).
         Comparator<CoinSummaryDto> comparator = switch (sortBy != null ? sortBy.toLowerCase() : "market_cap") {
             case "price" -> Comparator.comparing(CoinSummaryDto::getCurrentPrice, Comparator.nullsLast(Double::compareTo));
             case "volume", "total_volume" -> Comparator.comparing(CoinSummaryDto::getTotalVolume, Comparator.nullsLast(Double::compareTo));
@@ -276,9 +280,13 @@ public class MockCryptoDataService {
             default -> Comparator.comparing(CoinSummaryDto::getMarketCapRank, Comparator.nullsLast(Integer::compareTo));
         };
 
-        if ("desc".equalsIgnoreCase(order) && !"market_cap".equalsIgnoreCase(sortBy)) {
-            comparator = comparator.reversed();
-        } else if ("asc".equalsIgnoreCase(order) && "market_cap".equalsIgnoreCase(sortBy)) {
+        boolean isMarketCap = sortBy == null || "market_cap".equalsIgnoreCase(sortBy);
+        boolean wantDesc = "desc".equalsIgnoreCase(order);
+
+        // market_cap rank is inverse: rank 1 = highest cap, so for "desc" (highest cap first) keep ascending rank order;
+        // for "asc" (lowest cap first) reverse to descending rank order.
+        // For all other fields: "desc" = reverse the natural ascending comparator, "asc" = keep it.
+        if (isMarketCap ? !wantDesc : wantDesc) {
             comparator = comparator.reversed();
         }
 
